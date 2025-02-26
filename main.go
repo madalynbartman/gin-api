@@ -2,6 +2,7 @@ package main
 
 // will automatically import after you save
 import (
+	"errors"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -34,6 +35,69 @@ func getBooks(c *gin.Context) {
 	// test with curl localhost:8080/books
 }
 
+func getBookById(id string) (*book, error) {
+	for i, b := range books {
+		if b.ID == id {
+			return &books[i], nil
+		}
+	}
+	return nil, errors.New("book not found")
+}
+
+func bookById(c *gin.Context) {
+	id := c.Param("id")
+	book, err := getBookById(id)
+
+	if err != nil {
+		c.IndentedJSON(http.StatusNotFound, gin.H{"message": "Book not found."})
+		return
+	}
+
+	c.IndentedJSON(http.StatusOK, book)
+}
+
+func checkoutBook(c *gin.Context) {
+	//query param
+	id, ok := c.GetQuery("id")
+
+	if !ok {
+		c.IndentedJSON(http.StatusNotFound, gin.H{"message": "Missing id query parameter."})
+		return
+	}
+
+	book, err := getBookById(id)
+
+	if err != nil {
+		c.IndentedJSON(http.StatusNotFound, gin.H{"message": "Book not found."})
+		return
+	}
+	if book.Quantity <= 0 {
+		c.IndentedJSON(http.StatusBadRequest, gin.H{"message": "Book not found."})
+		return
+	}
+	book.Quantity -= 1
+	c.IndentedJSON(http.StatusOK, book)
+}
+
+func returnBook(c *gin.Context) {
+	id, ok := c.GetQuery("id")
+
+	if !ok {
+		c.IndentedJSON(http.StatusBadRequest, gin.H{"message": "Missing id query parameter."})
+		return
+	}
+
+	book, err := getBookById(id)
+
+	if err != nil {
+		c.IndentedJSON(http.StatusNotFound, gin.H{"message": "Book not found."})
+		return
+	}
+
+	book.Quantity += 1
+	c.IndentedJSON(http.StatusOK, book)
+}
+
 func createBook(c *gin.Context) {
 	var newBook book
 
@@ -48,6 +112,9 @@ func createBook(c *gin.Context) {
 func main() {
 	router := gin.Default()
 	router.GET("/books", getBooks)
+	router.GET("/books/:id", bookById) //path parameter
 	router.POST("/books", createBook)
+	router.PATCH("/checkout", checkoutBook)
+	router.PATCH("/return", returnBook)
 	router.Run("localhost:8080")
 }
