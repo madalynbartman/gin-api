@@ -118,3 +118,10 @@ func main() {
 	router.PATCH("/return", returnBook)
 	router.Run("localhost:8080")
 }
+
+//tested PATCH with:
+//curl localhost:8080/checkout?id=2 --request "PATCH"
+//curl localhost:8080/return?id=2 --request "PATCH"
+//curl localhost:8080/return?id=8 --request "PATCH"
+//curl localhost:8080/return --request "PATCH"
+//curl localhost:8080/return?id=2 --request "PATCH"
